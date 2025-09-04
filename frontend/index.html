@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Othello vs AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .game-subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #FF9800;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #F57C00;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .board-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: 400px;
+            height: 400px;
+            border: 3px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .cell {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #666;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .cell:hover {
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        .cell.legal {
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .cell.legal:hover {
+            background: rgba(76, 175, 80, 0.4);
+        }
+
+        .stone {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .stone.black {
+            background: #333;
+            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.3), inset -2px -2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stone.white {
+            background: #f2f2f2;
+            box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.8);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .player-info {
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 120px;
+        }
+
+        .player-info.black {
+            background: #333;
+            color: white;
+        }
+
+        .player-info.white {
+            background: #f2f2f2;
+            color: #333;
+        }
+
+        .player-info.current {
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+            transform: scale(1.05);
+        }
+
+        .player-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .player-score {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-result {
+            font-size: 1.2em;
+            margin-bottom: 25px;
+            color: #666;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .preview-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(76, 175, 80, 0.3);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .last-move-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30%;
+            height: 30%;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.9);
+            pointer-events: none;
+        }
+
+        .preview-overlay.show {
+            display: flex;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+            }
+            
+            .board {
+                width: 300px;
+                height: 300px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">Othello vs AI</h1>
+            <p class="game-subtitle">강력한 AI와 대결하세요! (AI 차례일 때 'AI 수 실행' 버튼을 클릭하세요)</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="newGame(true)">흑으로 시작</button>
+            <button class="btn btn-primary" onclick="newGame(false)">백으로 시작</button>
+            <button class="btn btn-secondary" onclick="undoMove(1)">한 수 되돌리기</button>
+            <button class="btn btn-secondary" onclick="undoMove(2)">한 턴 되돌리기</button>
+            <button class="btn btn-warning" onclick="passMove()" id="passBtn">패스</button>
+            <button class="btn btn-danger" onclick="resetGame()">게임 리셋</button>
+            <button class="btn btn-secondary" onclick="makeAIMove()" id="aiMoveBtn" style="display: none;">AI 수 실행</button>
+        </div>
+
+        <div class="game-info">
+            <div class="player-info black" id="blackInfo">
+                <div class="player-name">흑 (Black)</div>
+                <div class="player-score" id="blackScore">2</div>
+            </div>
+            <div class="player-info white" id="whiteInfo">
+                <div class="player-name">백 (White)</div>
+                <div class="player-score" id="whiteScore">2</div>
+            </div>
+        </div>
+
+        <div class="board-container">
+            <div class="board" id="board"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div>AI가 생각 중...</div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">게임 종료!</h2>
+            <div class="modal-result" id="modalResult"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="closeModal()">새 게임</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = null;
+        let humanIsBlack = true;
+        let previewMode = false;
+        let previewMove = null;
+
+        // API base URL
+        const API_BASE = 'http://localhost:8000';
+
+        // Initialize game
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeBoard();
+            // Start with human as black by default
+            newGame(true);
+        });
+
+        function initializeBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    
+                    const previewOverlay = document.createElement('div');
+                    previewOverlay.className = 'preview-overlay';
+                    previewOverlay.textContent = '미리보기';
+                    cell.appendChild(previewOverlay);
+                    
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        async function newGame(isBlack) {
+            try {
+                humanIsBlack = isBlack;
+                const response = await fetch(`${API_BASE}/new?human_black=${isBlack}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    gameState = await response.json();
+                    console.log('New game started:', gameState);
+                    updateDisplay();
+                    previewMode = false;
+                    previewMove = null;
+                    // Manual mode: do not auto-start AI. Use the button.
+                } else {
+                    const msg = await response.text();
+                    console.error('Failed to start new game:', response.status, msg);
+                }
+            } catch (error) {
+                console.error('Error starting new game:', error);
+            }
+        }
+
+        async function handleCellClick(r, c) {
+            if (!gameState || gameState.terminal) return;
+            
+            // Check if it's human's turn
+            const isHumanTurn = (humanIsBlack && gameState.to_move === 1) || 
+                               (!humanIsBlack && gameState.to_move === -1);
+            
+            if (!isHumanTurn) return;
+
+            // Check if move is legal
+            if (gameState.legal[r][c] !== 1) return;
+
+            // Simplify UX: single-click commits immediately
+            await makeMove(r, c);
+        }
+
+        async function showPreview(r, c) {
+            try {
+                const response = await fetch(`${API_BASE}/preview`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ r, c })
+                });
+
+                if (response.ok) {
+                    const preview = await response.json();
+                    if (preview.valid) {
+                        previewMode = true;
+                        previewMove = { r, c };
+                        updateDisplay(preview.state);
+                        
+                        // Show preview overlay
+                        const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                        const overlay = cell.querySelector('.preview-overlay');
+                        overlay.classList.add('show');
+                        
+                        // Add confirm/cancel buttons
+                        showConfirmButtons(r, c);
+                    }
+                } else {
+                    const msg = await response.text();
+                    console.warn('Preview failed:', response.status, msg);
+                }
+            } catch (error) {
+                console.error('Error showing preview:', error);
+            }
+        }
+
+        function showConfirmButtons(r, c) {
+            const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+            
+            // Remove existing buttons
+            const existingButtons = cell.querySelectorAll('.confirm-btn, .cancel-btn');
+            existingButtons.forEach(btn => btn.remove());
+            
+            // Add confirm button
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'btn btn-primary confirm-btn';
+            confirmBtn.textContent = '확인';
+            confirmBtn.style.position = 'absolute';
+            confirmBtn.style.top = '50%';
+            confirmBtn.style.left = '50%';
+            confirmBtn.style.transform = 'translate(-50%, -50%)';
+            confirmBtn.style.zIndex = '10';
+            confirmBtn.onclick = () => makeMove(r, c);
+            
+            // Add cancel button
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn btn-danger cancel-btn';
+            cancelBtn.textContent = '취소';
+            cancelBtn.style.position = 'absolute';
+            cancelBtn.style.top = '50%';
+            cancelBtn.style.left = '50%';
+            cancelBtn.style.transform = 'translate(-50%, -50%)';
+            cancelBtn.style.zIndex = '10';
+            cancelBtn.style.marginTop = '30px';
+            cancelBtn.onclick = cancelPreview;
+            
+            cell.appendChild(confirmBtn);
+            cell.appendChild(cancelBtn);
+        }
+
+        async function makeMove(r, c) {
+            console.log('Make move request', { r, c, to_move: gameState?.to_move, humanIsBlack });
+            try {
+                const response = await fetch(`${API_BASE}/move`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ r, c })
+                });
+
+                if (response.ok) {
+                    gameState = await response.json();
+                    updateDisplay();
+                    previewMode = false;
+                    previewMove = null;
+                    
+                    // Check if game is over
+                    if (gameState.terminal) {
+                        showGameOver();
+                    }
+                }
+                else {
+                    const msg = await response.text();
+                    console.warn('Move rejected:', response.status, msg);
+                }
+            } catch (error) {
+                console.error('Error making move:', error);
+            }
+        }
+
+        function cancelPreview() {
+            previewMode = false;
+            previewMove = null;
+            updateDisplay();
+            
+            // Remove preview overlays and buttons
+            document.querySelectorAll('.preview-overlay').forEach(overlay => {
+                overlay.classList.remove('show');
+            });
+            document.querySelectorAll('.confirm-btn, .cancel-btn').forEach(btn => {
+                btn.remove();
+            });
+        }
+
+        async function makeAIMove() {
+            if (gameState.terminal) return;
+            
+            // Check if it's AI's turn
+            const isAITurn = (humanIsBlack && gameState.to_move === -1) || 
+                            (!humanIsBlack && gameState.to_move === 1);
+            
+            if (!isAITurn) return;
+
+            showLoading(true);
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai_move?max_time_ms=2000`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    gameState = await response.json();
+                    updateDisplay();
+                    
+                    // Check if game is over
+                    if (gameState.terminal) {
+                        showGameOver();
+                    }
+                } else {
+                    const msg = await response.text();
+                    console.warn('AI move rejected:', response.status, msg);
+                    // Re-sync UI with server state (might be game over or forced pass)
+                    const s = await fetch(`${API_BASE}/state`);
+                    if (s.ok) {
+                        gameState = await s.json();
+                        updateDisplay();
+                        if (gameState.terminal) showGameOver();
+                    }
+                }
+            } catch (error) {
+                console.error('Error making AI move:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function undoMove(plies) {
+            try {
+                const response = await fetch(`${API_BASE}/undo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ plies })
+                });
+
+                if (response.ok) {
+                    gameState = await response.json();
+                    updateDisplay();
+                    previewMode = false;
+                    previewMove = null;
+                }
+            } catch (error) {
+                console.error('Error undoing move:', error);
+            }
+        }
+
+        async function passMove() {
+            try {
+                const response = await fetch(`${API_BASE}/pass`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    gameState = await response.json();
+                    updateDisplay();
+                    
+                    // Check if game is over
+                    if (gameState.terminal) {
+                        showGameOver();
+                    }
+                }
+                else {
+                    const msg = await response.text();
+                    console.warn('Pass rejected:', response.status, msg);
+                }
+            } catch (error) {
+                console.error('Error passing move:', error);
+            }
+        }
+        
+
+        function updateDisplay(state = null) {
+            const currentState = state || gameState;
+            if (!currentState) return;
+
+            // Update board
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                    const overlay = cell.querySelector('.preview-overlay');
+                    
+                    // Clear cell
+                    cell.innerHTML = '';
+                    cell.appendChild(overlay);
+                    // Remove any previous last-move indicator
+                    const oldLast = cell.querySelector('.last-move-indicator');
+                    if (oldLast) oldLast.remove();
+                    
+                    // Add stone if present
+                    if (currentState.grid[r][c] === 1) {
+                        const stone = document.createElement('div');
+                        stone.className = 'stone black';
+                        cell.appendChild(stone);
+                    } else if (currentState.grid[r][c] === -1) {
+                        const stone = document.createElement('div');
+                        stone.className = 'stone white';
+                        cell.appendChild(stone);
+                    }
+                    
+                    // Show legal moves
+                    if (currentState.legal[r][c] === 1) {
+                        cell.classList.add('legal');
+                    } else {
+                        cell.classList.remove('legal');
+                    }
+                }
+            }
+
+            // Draw last move indicator if present
+            if (currentState.last_move) {
+                const { r, c } = currentState.last_move;
+                const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                if (cell) {
+                    const marker = document.createElement('div');
+                    marker.className = 'last-move-indicator';
+                    cell.appendChild(marker);
+                }
+            }
+
+            // Update scores
+            document.getElementById('blackScore').textContent = currentState.black;
+            document.getElementById('whiteScore').textContent = currentState.white;
+
+            // Update current player indicator
+            document.getElementById('blackInfo').classList.toggle('current', currentState.to_move === 1);
+            document.getElementById('whiteInfo').classList.toggle('current', currentState.to_move === -1);
+
+            // Update pass button
+            const passBtn = document.getElementById('passBtn');
+            passBtn.disabled = currentState.legal.some(row => row.some(cell => cell === 1));
+            
+            // Update AI move button visibility
+            const aiMoveBtn = document.getElementById('aiMoveBtn');
+            const isAITurn = (humanIsBlack && currentState.to_move === -1) || 
+                            (!humanIsBlack && currentState.to_move === 1);
+            aiMoveBtn.style.display = isAITurn ? 'inline-block' : 'none';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showGameOver() {
+            const modal = document.getElementById('gameOverModal');
+            const resultDiv = document.getElementById('modalResult');
+            
+            let resultText = '';
+            if (gameState.winner === 1) {
+                resultText = `흑이 승리했습니다! (${gameState.black} : ${gameState.white})`;
+            } else if (gameState.winner === -1) {
+                resultText = `백이 승리했습니다! (${gameState.white} : ${gameState.black})`;
+            } else {
+                resultText = `무승부입니다! (${gameState.black} : ${gameState.white})`;
+            }
+            
+            resultDiv.textContent = resultText;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('gameOverModal').style.display = 'none';
+            newGame(humanIsBlack);
+        }
+
+        function resetGame() {
+            // Reset to initial state
+            previewMode = false;
+            previewMove = null;
+            newGame(humanIsBlack);
+        }
+
+        // AI turn indicator - show when it's AI's turn but don't auto-play
+        setInterval(() => {
+            if (gameState && !gameState.terminal && !previewMode) {
+                const isAITurn = (humanIsBlack && gameState.to_move === -1) || 
+                                (!humanIsBlack && gameState.to_move === 1);
+                
+                if (isAITurn) {
+                    // Show that it's AI's turn, but don't auto-play
+                    console.log("AI 차례입니다. AI 수를 실행하려면 'AI 수 실행' 버튼을 클릭하세요.");
+                }
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
